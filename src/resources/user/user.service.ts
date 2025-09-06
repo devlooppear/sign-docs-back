@@ -22,11 +22,13 @@ import {
   PaginationMetaDto,
 } from '../../common/dto/pagination.dto';
 import { UserRole } from '../../common/enum/user-role.enum';
+import { AssinService } from '../assin/assin.service';
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly assinService: AssinService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -54,13 +56,11 @@ export class UserService {
             throw new BadRequestException('Invalid CPF for person type PF');
           }
           break;
-
         case TipoPessoa.PJ:
           if (!isCNPJ(document_number)) {
             throw new BadRequestException('Invalid CNPJ for person type PJ');
           }
           break;
-
         default:
           if (!isCPF(document_number)) {
             throw new BadRequestException(
@@ -82,6 +82,9 @@ export class UserService {
 
       const savedUser = await this.userRepository.save(user);
       logInfo(`User created successfully: ${savedUser.id}`, 'UserService');
+
+      await this.assinService.create(savedUser);
+
       return savedUser;
     } catch (error) {
       logError(error, 'UserService.create');

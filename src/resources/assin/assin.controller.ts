@@ -1,34 +1,28 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { AssinService } from './assin.service';
-import { CreateAssinDto } from './dto/create-assin.dto';
-import { UpdateAssinDto } from './dto/update-assin.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { UserRole } from '../../common/enum/user-role.enum';
+import {
+  DEFAULT_PAGE,
+  DEFAULT_LIMIT,
+} from '../../common/constants/pagination.const';
+import { getUserFromRequest } from '../../common/utils/user.util';
 
 @Controller('assin')
 export class AssinController {
   constructor(private readonly assinService: AssinService) {}
 
-  @Post()
-  create(@Body() createAssinDto: CreateAssinDto) {
-    return this.assinService.create(createAssinDto);
-  }
-
+  @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
-    return this.assinService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.assinService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAssinDto: UpdateAssinDto) {
-    return this.assinService.update(+id, updateAssinDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.assinService.remove(+id);
+  find(@Req() req) {
+    const userPayload = getUserFromRequest(req);
+    const page = req.query.page ? Number(req.query.page) : DEFAULT_PAGE;
+    const size = req.query.size ? Number(req.query.size) : DEFAULT_LIMIT;
+    if (userPayload.role === UserRole.ADMIN) {
+      return this.assinService.findAll(page, size);
+    } else if (userPayload.role === UserRole.CLIENT) {
+      return this.assinService.findByUser(userPayload.userId);
+    }
+    return { error: 'Unauthorized' };
   }
 }

@@ -39,7 +39,4 @@ export class Document {
 
   @UpdateDateColumn()
   updated_at: Date;
-
-  @OneToMany(() => Assin, (signature) => signature.document, { cascade: true })
-  signatures: Assin[];
 }
