@@ -17,6 +17,7 @@ try {
     database: process.env.DB_NAME,
     synchronize: ENVIRONMENT === 'LOCAL',
     logging: ENVIRONMENT === 'LOCAL',
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     entities: [path.resolve(__dirname, '../resources/**/*.entity.{ts,js}')],
     migrations: [path.resolve(__dirname, '../migrations/*{.ts,.js}')],
     migrationsRun: false,
