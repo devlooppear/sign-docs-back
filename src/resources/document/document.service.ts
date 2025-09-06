@@ -107,14 +107,17 @@ export class DocumentService {
     user: { userId: number; role: string },
     page = DEFAULT_PAGE,
     limit = DEFAULT_LIMIT,
+    status?: string,
   ): Promise<PaginationDto<Document>> {
     try {
       const skip = (page - 1) * limit;
-      const where =
+      let where: any =
         user.role === UserRole.ADMIN
           ? {}
           : { uploaded_by: { id: user.userId } };
-
+      if (status) {
+        where = { ...where, status };
+      }
       const [data, totalItems] = await this.documentRepository.findAndCount({
         where,
         order: { created_at: 'DESC' },

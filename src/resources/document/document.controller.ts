@@ -14,7 +14,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentService } from './document.service';
-import { UpdateDocumentDto } from './dto/update-document.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DOC_MAX_FILE_SIZE } from '../../common/utils/validation.util';
 import { UserRole } from '../../common/enum/user-role.enum';
@@ -51,8 +50,9 @@ export class DocumentController {
   find(@Req() req) {
     const page = req.query.page ? Number(req.query.page) : undefined;
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const status = req.query.status ? String(req.query.status) : undefined;
     return req.user.role === UserRole.ADMIN
-      ? this.documentService.findAll(req.user, page, limit)
+      ? this.documentService.findAll(req.user, page, limit, status)
       : this.documentService.findByUser(req.user.userId);
   }
 
