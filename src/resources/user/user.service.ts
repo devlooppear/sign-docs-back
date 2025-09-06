@@ -99,6 +99,7 @@ export class UserService {
       const [users, totalItems] = await this.userRepository.findAndCount({
         skip: (page - 1) * limit,
         take: limit,
+        relations: ['uploaded_documents', 'signatures'],
         select: [
           'id',
           'name',
@@ -109,6 +110,10 @@ export class UserService {
           'created_at',
           'updated_at',
         ],
+      });
+
+      users.forEach((user) => {
+        (user as any).password = undefined;
       });
 
       const totalPages = Math.ceil(totalItems / limit);
@@ -137,6 +142,7 @@ export class UserService {
     try {
       const user = await this.userRepository.findOne({
         where: { id },
+        relations: ['uploaded_documents', 'signatures'],
         select: [
           'id',
           'name',
@@ -153,6 +159,8 @@ export class UserService {
         logWarn(`User with id ${id} not found`, 'UserService.findOne');
         throw new NotFoundException(`User with id ${id} not found`);
       }
+
+      (user as any).password = undefined;
 
       logInfo(`User retrieved: ${user.id}`, 'UserService');
       return user;
