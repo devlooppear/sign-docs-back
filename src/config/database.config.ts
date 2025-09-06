@@ -1,6 +1,6 @@
 import { DataSourceOptions } from 'typeorm';
 import * as path from 'path';
-import { getCurrentEnv } from '../common/utils/get-current-env';
+import { getCurrentEnv } from '../common/utils/get-current-env.util';
 import { logInfo, logError } from '../common/utils/log.util';
 
 const ENVIRONMENT = getCurrentEnv();

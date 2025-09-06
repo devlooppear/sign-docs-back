@@ -7,10 +7,14 @@ import { AssinModule } from './resources/assin/assin.module';
 import { AuthModule } from './resources/auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/database.config';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(typeOrmConfig),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     UserModule,
     DocumentModule,
     AssinModule,

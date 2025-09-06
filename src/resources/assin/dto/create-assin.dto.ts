@@ -7,7 +7,7 @@ import {
   Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CPF_CNPJ_REGEX } from '../../../common/utils/validation';
+import { CPF_CNPJ_REGEX } from '../../../common/utils/validation.util';
 
 export class CreateAssinDto {
   @IsNumber()

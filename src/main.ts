@@ -7,7 +7,7 @@ import getPort from 'get-port';
 
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Environment } from './common/enum/environments.enum';
-import { getCurrentEnv } from './common/utils/get-current-env';
+import { getCurrentEnv } from './common/utils/get-current-env.util';
 import { logInfo, logError } from './common/utils/log.util';
 
 dotenv.config();

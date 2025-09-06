@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { UserRole } from '../../../common/enum/user-role.enum';
 import { TipoPessoa } from '../../../common/enum/tipo-pessoa.enum';
-import { CPF_CNPJ_REGEX, STRONG_PASSWORD_REGEX } from '../../../common/utils/validation';
+import { CPF_CNPJ_REGEX, STRONG_PASSWORD_REGEX } from '../../../common/utils/validation.util';
 
 export class CreateUserDto {
   @IsString()

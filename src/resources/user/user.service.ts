@@ -12,7 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { logError, logInfo, logWarn } from '../../common/utils/log.util';
 import { isStrongPassword } from 'class-validator';
 import { TipoPessoa } from '../../common/enum/tipo-pessoa.enum';
-import { isCNPJ, isCPF } from '../../common/utils/validation';
+import { isCNPJ, isCPF } from '../../common/utils/validation.util';
 import {
   DEFAULT_LIMIT,
   DEFAULT_PAGE,
@@ -21,6 +21,7 @@ import {
   PaginationDto,
   PaginationMetaDto,
 } from '../../common/dto/pagination.dto';
+import { UserRole } from '../../common/enum/user-role.enum';
 @Injectable()
 export class UserService {
   constructor(
@@ -30,6 +31,10 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     try {
+      if (!createUserDto) {
+        throw new BadRequestException('Request body is required');
+      }
+
       const {
         password,
         document_number,
@@ -71,6 +76,7 @@ export class UserService {
         ...rest,
         password: hashedPassword,
         person_type,
+        role: rest.role || UserRole.CLIENT,
         document_number,
       });
 
