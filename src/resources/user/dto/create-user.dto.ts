@@ -3,12 +3,11 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
-  Length,
   Matches,
 } from 'class-validator';
 import { UserRole } from '../../../common/enum/user-role.enum';
 import { TipoPessoa } from '../../../common/enum/tipo-pessoa.enum';
-import { CPF_CNPJ_REGEX } from '../../../common/utils/validation';
+import { CPF_CNPJ_REGEX, STRONG_PASSWORD_REGEX } from '../../../common/utils/validation';
 
 export class CreateUserDto {
   @IsString()
@@ -21,17 +20,20 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  @Length(6, 100)
+  @Matches(STRONG_PASSWORD_REGEX, {
+    message:
+      'Password too weak. Must have at least 8 chars, upper, lower, number, special.',
+  })
   password: string;
 
   @IsEnum(UserRole)
   role: UserRole;
 
   @IsEnum(TipoPessoa)
-  tipo_pessoa: TipoPessoa;
+  person_type: TipoPessoa;
 
   @IsString()
   @IsNotEmpty()
-  @Matches(CPF_CNPJ_REGEX, { message: 'CPF ou CNPJ inválido' })
-  documento: string;
+  @Matches(CPF_CNPJ_REGEX, { message: 'Invalid CPF or CNPJ format' })
+  document_number: string;
 }
