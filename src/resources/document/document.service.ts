@@ -118,12 +118,19 @@ export class DocumentService {
       if (status) {
         where = { ...where, status };
       }
+
       const [data, totalItems] = await this.documentRepository.findAndCount({
         where,
         order: { created_at: 'DESC' },
-        relations: ['uploaded_by'],
+        relations: ['uploaded_by', 'signatures'],
         skip,
         take: limit,
+      });
+
+      data.forEach((doc) => {
+        if (doc.uploaded_by) {
+          (doc.uploaded_by as any).password = undefined;
+        }
       });
 
       const totalPages = Math.ceil(totalItems / limit);
@@ -149,7 +156,13 @@ export class DocumentService {
       const documents = await this.documentRepository.find({
         where: { uploaded_by: { id: userId } },
         order: { created_at: 'DESC' },
-        relations: ['uploaded_by'],
+        relations: ['uploaded_by', 'signatures'],
+      });
+
+      documents.forEach((doc) => {
+        if (doc.uploaded_by) {
+          (doc.uploaded_by as any).password = undefined;
+        }
       });
 
       logInfo(
