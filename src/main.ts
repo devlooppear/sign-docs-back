@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { DataSource } from 'typeorm';
 import { typeOrmConfig } from './config/database.config';
 import * as dotenv from 'dotenv';
-import getPort from 'get-port';
 
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Environment } from './common/enum/environments.enum';
@@ -59,10 +58,7 @@ async function bootstrap() {
       logInfo('Swagger configurado e disponível em /api-docs', 'Bootstrap');
     }
 
-    const initialPort = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-    const portsToTry = Array.from({ length: 100 }, (_, i) => initialPort + i);
-    const port = await getPort({ port: portsToTry });
-
+    const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
     await app.listen(port);
     logInfo(`Server rodando na porta ${port}`, 'Bootstrap');
   } catch (error) {
