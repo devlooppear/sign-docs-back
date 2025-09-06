@@ -19,6 +19,8 @@ export const CPF_CNPJ_REGEX = /^\d{11}$|^\d{14}$/;
 export const STRONG_PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
 
+export const DOC_MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 /**
  * Valida se a string fornecida é um CPF válido
  */
