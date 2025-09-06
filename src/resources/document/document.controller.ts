@@ -16,8 +16,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentService } from './document.service';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { Multer } from 'multer';
 import { DOC_MAX_FILE_SIZE } from '../../common/utils/validation.util';
+import { UserRole } from '../../common/enum/user-role.enum';
 
 @Controller('documents')
 export class DocumentController {
@@ -39,7 +39,7 @@ export class DocumentController {
       },
     }),
   )
-  async uploadDocument(@UploadedFile() file: Multer.File, @Req() req) {
+  async uploadDocument(@UploadedFile() file: Express.Multer.File, @Req() req) {
     return this.documentService.uploadToStorage({
       file,
       uploadedById: req.user.userId,
@@ -48,28 +48,17 @@ export class DocumentController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
-    return this.documentService.findAll();
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.documentService.findOne(+id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateDocumentDto: UpdateDocumentDto,
-  ) {
-    return this.documentService.update(+id, updateDocumentDto);
+  find(@Req() req) {
+    const page = req.query.page ? Number(req.query.page) : undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    return req.user.role === UserRole.ADMIN
+      ? this.documentService.findAll(req.user, page, limit)
+      : this.documentService.findByUser(req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.documentService.remove(+id);
+  remove(@Param('id') id: string, @Req() req) {
+    return this.documentService.remove(+id, req.user);
   }
 }
