@@ -83,6 +83,16 @@ Este projeto é uma API para uma plataforma de assinatura digital de documentos,
 
 ---
 
+# Testes
+
+Para rodar os testes automatizados do projeto, utilize:
+
+```bash
+yarn run test
+# ou npm run test
+```
+
+---
 
 ## � Documentação da API
 
