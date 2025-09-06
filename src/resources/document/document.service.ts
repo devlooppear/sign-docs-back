@@ -13,10 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 import { DocumentStatus } from '../../common/enum/document-status.enum';
 import { DOC_MAX_FILE_SIZE } from '../../common/utils/validation.util';
 import { logError, logInfo } from '../../common/utils/log.util';
-import {
-  generateDocumentName,
-  getDocumentPublicUrl,
-} from '../../common/utils/documents.util';
+import { generateDocumentName } from '../../common/utils/documents.util';
 import { UserRole } from '../../common/enum/user-role.enum';
 import {
   PaginationDto,
@@ -29,17 +26,169 @@ import {
 } from '../../common/constants/pagination.const';
 import { SUPABASE_BUCKET } from '../../common/constants/document.const';
 
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { Assin } from '../assin/entities/assin.entity';
+import { getDocumentPublicUrl } from '../../common/utils/documents.util';
+import { TipoPessoa } from '../../common/enum/tipo-pessoa.enum';
+import {
+  formatCpfCnpj,
+  generateSignatureHash,
+} from '../../common/utils/signature.util';
+import {
+  SIGNATURE_BOX_WIDTH,
+  SIGNATURE_BOX_HEIGHT,
+  SIGNATURE_FONT_SIZE,
+  SIGNATURE_FONT_SIZE_NAME,
+  SIGNATURE_FONT_SIZE_LABEL,
+  SIGNATURE_FONT_SIZE_HASH,
+} from '../../common/constants/signature.const';
+
 @Injectable()
 export class DocumentService {
   private supabase;
   private bucket: string;
   private maxFileSize: number;
 
+  async assignDocument({ documentId, page, x, y, user }) {
+    const pageNum = Number(page);
+    const xNum = Number(x);
+    const yNum = Number(y);
+    if (isNaN(pageNum) || isNaN(xNum) || isNaN(yNum)) {
+      throw new InternalServerErrorException(
+        'Parâmetros page, x e y devem ser números válidos',
+      );
+    }
+
+    const document = await this.documentRepository.findOne({
+      where: { id: documentId },
+      relations: ['uploaded_by'],
+    });
+    if (!document) throw new NotFoundException('Documento não encontrado');
+
+    const { data, error } = await this.supabase.storage
+      .from(this.bucket)
+      .download(document.file_path);
+    if (error || !data)
+      throw new InternalServerErrorException('Erro ao baixar PDF original');
+    const pdfBuffer = await data.arrayBuffer();
+
+    const assinUser = await this.userRepository.findOne({
+      where: { id: user.userId },
+    });
+    if (!assinUser) throw new NotFoundException('Usuário não encontrado');
+    const code = Date.now();
+    const signature_hash = generateSignatureHash({
+      id: assinUser.id,
+      name: assinUser.name,
+      document_number: assinUser.document_number,
+      code,
+    });
+    const assinatura = this.assinRepository.create({
+      user: assinUser,
+      code,
+      signature_hash,
+    });
+    await this.assinRepository.save(assinatura);
+
+    const docLabel = assinUser.person_type === TipoPessoa.PF ? 'CPF' : 'CNPJ';
+    const docValue = formatCpfCnpj(
+      assinUser.document_number.replace(/\D/g, ''),
+      assinUser.person_type,
+    );
+
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+    const pages = pdfDoc.getPages();
+    const targetPage = pages[pageNum - 1] || pages[0];
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    const boxWidth = SIGNATURE_BOX_WIDTH;
+    const boxHeight = SIGNATURE_BOX_HEIGHT;
+
+    targetPage.drawRectangle({
+      x: xNum + 1,
+      y: yNum - 1,
+      width: boxWidth,
+      height: boxHeight,
+      color: rgb(0.93, 0.93, 0.93),
+      opacity: 0.5,
+    });
+    targetPage.drawRectangle({
+      x: xNum,
+      y: yNum,
+      width: boxWidth,
+      height: boxHeight,
+      color: rgb(1, 1, 1),
+      opacity: 0.98,
+    });
+
+    const textLines = [
+      `Assinado digitalmente`,
+      `${assinUser.name}`,
+      `${docLabel}: ${docValue}`,
+      `Data: ${new Date().toLocaleString('pt-BR')}`,
+      `Hash: ${assinatura.signature_hash}`,
+    ];
+    let yText = yNum + boxHeight - 10;
+    for (let i = 0; i < textLines.length; i++) {
+      targetPage.drawText(textLines[i], {
+        x: xNum + 7,
+        y: yText,
+        size:
+          i === 1
+            ? SIGNATURE_FONT_SIZE_NAME
+            : i === 0
+              ? SIGNATURE_FONT_SIZE_LABEL
+              : i === 4
+                ? SIGNATURE_FONT_SIZE_HASH
+                : SIGNATURE_FONT_SIZE,
+        font,
+        color: rgb(0, 0, 0),
+        opacity: 1,
+        maxWidth: boxWidth - 14,
+      });
+          yText -= (i === 1 ? 10 : (i === 0 ? 8 : 9));
+    }
+
+    const signedPdfBytes = await pdfDoc.save();
+    const signedFileName = document.file_path.replace(/\.pdf$/, '_signed.pdf');
+
+    const { error: uploadError } = await this.supabase.storage
+      .from(this.bucket)
+      .upload(signedFileName, Buffer.from(signedPdfBytes), {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+    if (uploadError)
+      throw new InternalServerErrorException('Erro ao subir PDF assinado');
+
+    document.file_path = signedFileName;
+    document.status = DocumentStatus.SIGNED;
+    await this.documentRepository.save(document);
+
+    const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || '';
+    const url = getDocumentPublicUrl(supabaseUrl, this.bucket, signedFileName);
+    return {
+      message: 'Documento assinado com sucesso',
+      assinatura: {
+        id: assinatura.id,
+        nome: assinUser.name,
+        tipo: assinUser.person_type,
+        documento: docValue,
+        hash: assinatura.signature_hash,
+        data: assinatura.signed_at,
+      },
+      file_path: signedFileName,
+      url,
+    };
+  }
+
   constructor(
     @InjectRepository(Document)
     private readonly documentRepository: Repository<Document>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Assin)
+    private readonly assinRepository: Repository<Assin>,
     private readonly configService: ConfigService,
   ) {
     const supabaseUrl = configService.get<string>('SUPABASE_URL') || '';

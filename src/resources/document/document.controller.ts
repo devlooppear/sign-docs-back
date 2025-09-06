@@ -17,6 +17,7 @@ import { DocumentService } from './document.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DOC_MAX_FILE_SIZE } from '../../common/utils/validation.util';
 import { UserRole } from '../../common/enum/user-role.enum';
+import { AssignDocumentDto } from './dto/assign-doc.dto';
 
 @Controller('documents')
 export class DocumentController {
@@ -60,5 +61,14 @@ export class DocumentController {
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req) {
     return this.documentService.remove(+id, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('assign')
+  async assignDocument(@Body() body: AssignDocumentDto, @Req() req) {
+    return this.documentService.assignDocument({
+      ...body,
+      user: req.user,
+    });
   }
 }

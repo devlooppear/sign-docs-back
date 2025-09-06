@@ -1,0 +1,6 @@
+export const SIGNATURE_BOX_WIDTH = 160;
+export const SIGNATURE_BOX_HEIGHT = 40;
+export const SIGNATURE_FONT_SIZE = 7;
+export const SIGNATURE_FONT_SIZE_NAME = 8;
+export const SIGNATURE_FONT_SIZE_LABEL = 6;
+export const SIGNATURE_FONT_SIZE_HASH = 6;
