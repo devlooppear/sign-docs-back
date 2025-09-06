@@ -7,3 +7,11 @@ export function generateDocumentName(originalName: string): string {
   const baseName = originalName.replace(/\.[^/.]+$/, '');
   return `${baseName}_${timestamp}`;
 }
+
+export function getDocumentPublicUrl(
+  supabaseUrl: string,
+  bucket: string,
+  filePath: string,
+): string {
+  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${filePath}`;
+}

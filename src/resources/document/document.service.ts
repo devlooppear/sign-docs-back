@@ -13,16 +13,21 @@ import { createClient } from '@supabase/supabase-js';
 import { DocumentStatus } from '../../common/enum/document-status.enum';
 import { DOC_MAX_FILE_SIZE } from '../../common/utils/validation.util';
 import { logError, logInfo } from '../../common/utils/log.util';
-import { generateDocumentName } from '../../common/utils/documents.util';
+import {
+  generateDocumentName,
+  getDocumentPublicUrl,
+} from '../../common/utils/documents.util';
 import { UserRole } from '../../common/enum/user-role.enum';
 import {
   PaginationDto,
   PaginationMetaDto,
 } from '../../common/dto/pagination.dto';
+
 import {
   DEFAULT_PAGE,
   DEFAULT_LIMIT,
 } from '../../common/constants/pagination.const';
+import { SUPABASE_BUCKET } from '../../common/constants/document.const';
 
 @Injectable()
 export class DocumentService {
@@ -40,7 +45,8 @@ export class DocumentService {
     const supabaseUrl = configService.get<string>('SUPABASE_URL') || '';
     const supabaseKey = configService.get<string>('SUPABASE_KEY') || '';
     this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.bucket = configService.get<string>('SUPABASE_BUCKET') || 'docs-sign';
+    this.bucket =
+      configService.get<string>('SUPABASE_BUCKET') || SUPABASE_BUCKET;
     this.maxFileSize = Number(DOC_MAX_FILE_SIZE);
   }
 
@@ -127,10 +133,17 @@ export class DocumentService {
         take: limit,
       });
 
+      const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || '';
       data.forEach((doc) => {
         if (doc.uploaded_by) {
           (doc.uploaded_by as any).password = undefined;
         }
+
+        (doc as any).url = getDocumentPublicUrl(
+          supabaseUrl,
+          SUPABASE_BUCKET,
+          doc.file_path,
+        );
       });
 
       const totalPages = Math.ceil(totalItems / limit);
@@ -159,10 +172,17 @@ export class DocumentService {
         relations: ['uploaded_by', 'signatures'],
       });
 
+      const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || '';
       documents.forEach((doc) => {
         if (doc.uploaded_by) {
           (doc.uploaded_by as any).password = undefined;
         }
+
+        (doc as any).url = getDocumentPublicUrl(
+          supabaseUrl,
+          SUPABASE_BUCKET,
+          doc.file_path,
+        );
       });
 
       logInfo(
