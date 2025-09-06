@@ -6,12 +6,13 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Assin } from '../../assin/entities/assin.entity';
 import { DocumentStatus } from '../../../common/enum/document-status.enum';
 
-@Entity('documentos')
+@Entity('documents')
 export class Document {
   @PrimaryGeneratedColumn()
   id: number;
@@ -22,7 +23,8 @@ export class Document {
   @Column()
   file_path: string;
 
-  @ManyToOne(() => User, (user) => user.documentos)
+  @ManyToOne(() => User, (user) => user.uploaded_documents, { eager: true })
+  @JoinColumn({ name: 'uploaded_by_id' })
   uploaded_by: User;
 
   @Column({
@@ -38,6 +40,6 @@ export class Document {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToMany(() => Assin, (assinatura) => assinatura.document)
-  assinaturas: Assin[];
+  @OneToMany(() => Assin, (signature) => signature.document, { cascade: true })
+  signatures: Assin[];
 }

@@ -16,7 +16,7 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return the Initial Message', () => {
-      const initialMessage = 'my API LOL';
+      const initialMessage = 'Welcome to SignDocs API!';
       expect(appController.getHello()).toEqual({ message: initialMessage });
     });
   });

@@ -1,24 +1,20 @@
 import { DataSourceOptions } from 'typeorm';
-import * as dotenv from 'dotenv';
-import path from 'path';
+import * as path from 'path';
 import { getCurrentEnv } from '../common/utils/get-current-env';
+import { logInfo, logError } from '../common/utils/log.util';
 
-dotenv.config();
+const ENVIRONMENT = getCurrentEnv();
 
 let typeOrmConfig: DataSourceOptions;
 
 try {
-  const DB_TYPE = process.env.DB_TYPE as any;
-  const DATABASE_URL = process.env.DATABASE_URL;
-  const ENVIRONMENT = getCurrentEnv();
-
-  if (!DB_TYPE) {
-    throw new Error('DB_TYPE is not defined in .env');
-  }
-
   typeOrmConfig = {
-    type: DB_TYPE,
-    url: DATABASE_URL,
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     synchronize: ENVIRONMENT === 'LOCAL',
     logging: ENVIRONMENT === 'LOCAL',
     entities: [path.resolve(__dirname, '../resources/**/*.entity.{ts,js}')],
@@ -26,9 +22,12 @@ try {
     migrationsRun: false,
   };
 
-  console.log(`TypeORM config loaded for DB: ${DB_TYPE} on ${ENVIRONMENT}`);
+  logInfo(
+    `TypeORM config loaded for Postgres on environment: ${ENVIRONMENT}`,
+    'TypeORM',
+  );
 } catch (error) {
-  console.error('Error loading TypeORM config:', error);
+  logError(error, 'TypeORM');
   throw error;
 }
 
