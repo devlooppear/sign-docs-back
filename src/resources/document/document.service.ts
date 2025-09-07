@@ -277,7 +277,7 @@ export class DocumentService {
       const [data, totalItems] = await this.documentRepository.findAndCount({
         where,
         order: { created_at: 'DESC' },
-        relations: ['uploaded_by', 'signatures'],
+        relations: ['uploaded_by'],
         skip,
         take: limit,
       });
@@ -318,7 +318,7 @@ export class DocumentService {
       const documents = await this.documentRepository.find({
         where: { uploaded_by: { id: userId } },
         order: { created_at: 'DESC' },
-        relations: ['uploaded_by', 'signatures'],
+        relations: ['uploaded_by'],
       });
 
       const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || '';
