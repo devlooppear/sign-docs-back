@@ -146,7 +146,7 @@ export class DocumentService {
         opacity: 1,
         maxWidth: boxWidth - 14,
       });
-          yText -= (i === 1 ? 10 : (i === 0 ? 8 : 9));
+      yText -= i === 1 ? 10 : i === 0 ? 8 : 9;
     }
 
     const signedPdfBytes = await pdfDoc.save();
@@ -253,7 +253,7 @@ export class DocumentService {
       const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || '';
       const url = getDocumentPublicUrl(supabaseUrl, this.bucket, data.path);
 
-  return { document: saved, url };
+      return { document: saved, url };
     } catch (error) {
       logError(error, 'DocumentService.uploadToStorage');
       throw error instanceof InternalServerErrorException
@@ -317,16 +317,29 @@ export class DocumentService {
     }
   }
 
-  async findByUser(userId: number): Promise<Document[]> {
+  async findByUser(
+    userId: number,
+    page = DEFAULT_PAGE,
+    limit = DEFAULT_LIMIT,
+    status?: string,
+  ): Promise<PaginationDto<Document>> {
     try {
-      const documents = await this.documentRepository.find({
-        where: { uploaded_by: { id: userId } },
+      const skip = (page - 1) * limit;
+      let where: any = { uploaded_by: { id: userId } };
+      if (status) {
+        where = { ...where, status };
+      }
+
+      const [data, totalItems] = await this.documentRepository.findAndCount({
+        where,
         order: { created_at: 'DESC' },
         relations: ['uploaded_by'],
+        skip,
+        take: limit,
       });
 
       const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || '';
-      documents.forEach((doc) => {
+      data.forEach((doc) => {
         if (doc.uploaded_by) {
           (doc.uploaded_by as any).password = undefined;
         }
@@ -338,12 +351,22 @@ export class DocumentService {
         );
       });
 
+      const totalPages = Math.ceil(totalItems / limit);
+      const metadata: PaginationMetaDto = {
+        page,
+        size: limit,
+        totalItems,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      };
+
       logInfo(
-        `Documents fetched for user ${userId}, count: ${documents.length}`,
+        `Documents fetched for user ${userId}, count: ${data.length}`,
         'DocumentService.findByUser',
       );
 
-      return documents;
+      return { data, metadata };
     } catch (error) {
       logError(error, 'DocumentService.findByUser');
       throw new InternalServerErrorException('Error fetching user documents');

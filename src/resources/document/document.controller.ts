@@ -52,9 +52,11 @@ export class DocumentController {
     const page = req.query.page ? Number(req.query.page) : undefined;
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
     const status = req.query.status ? String(req.query.status) : undefined;
-    return req.user.role === UserRole.ADMIN
-      ? this.documentService.findAll(req.user, page, limit, status)
-      : this.documentService.findByUser(req.user.userId);
+    if (req.user.role === UserRole.ADMIN) {
+      return this.documentService.findAll(req.user, page, limit, status);
+    } else {
+      return this.documentService.findByUser(req.user.userId, page, limit, status);
+    }
   }
 
   @UseGuards(JwtAuthGuard)
