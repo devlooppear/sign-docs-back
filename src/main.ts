@@ -18,20 +18,13 @@ async function bootstrap() {
 
     const environment: Environment = getCurrentEnv();
 
-    let allowedOrigin: string | string[] = '*';
-    if (environment === Environment.PRODUCTION) {
-      if (!process.env.FRONTEND_URL) {
-        throw new Error('FRONTEND_URL não definido no .env para produção');
-      }
-      allowedOrigin = process.env.FRONTEND_URL;
-    }
-
     app.enableCors({
-      origin: allowedOrigin,
+      origin:
+        environment === Environment.PRODUCTION ? process.env.FRONTEND_URL : '*',
       credentials: true,
       methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-      allowedHeaders: '*',
-      exposedHeaders: '*',
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      exposedHeaders: ['Authorization'],
     });
 
     const dataSource = new DataSource(typeOrmConfig);
