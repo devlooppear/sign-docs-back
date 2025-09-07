@@ -207,7 +207,7 @@ export class DocumentService {
     file: Express.Multer.File;
     uploadedById: number;
     name?: string;
-  }): Promise<Document> {
+  }): Promise<{ document: Document; url: string }> {
     try {
       if (!file) throw new InternalServerErrorException('File is required');
       if (file.mimetype !== 'application/pdf') {
@@ -249,7 +249,11 @@ export class DocumentService {
 
       const saved = await this.documentRepository.save(document);
       logInfo(`Document uploaded successfully: ${saved.id}`, 'DocumentService');
-      return saved;
+
+      const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || '';
+      const url = getDocumentPublicUrl(supabaseUrl, this.bucket, data.path);
+
+  return { document: saved, url };
     } catch (error) {
       logError(error, 'DocumentService.uploadToStorage');
       throw error instanceof InternalServerErrorException
