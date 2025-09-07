@@ -16,10 +16,15 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.setGlobalPrefix('api');
 
-    const environment = getCurrentEnv();
+    const environment: Environment = getCurrentEnv();
 
-    const allowedOrigin =
-      environment === Environment.PRODUCTION ? process.env.FRONTEND_URL : '*';
+    let allowedOrigin: string | string[] = '*';
+    if (environment === Environment.PRODUCTION) {
+      if (!process.env.FRONTEND_URL) {
+        throw new Error('FRONTEND_URL não definido no .env para produção');
+      }
+      allowedOrigin = process.env.FRONTEND_URL;
+    }
 
     app.enableCors({
       origin: allowedOrigin,
